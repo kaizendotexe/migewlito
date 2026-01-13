@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "gogogo.com/en-ph/api/*.php": {
+      "runtime": "vercel-php@0.7.0"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/gogogo.com/en-ph/api/$1"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/gogogo.com/en-ph/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/gogogo.com/en-ph/$1"
+    }
+  ]
+}

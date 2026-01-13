@@ -1,0 +1,5 @@
+# HTTrack Website Copier Cookie File
+# This file format is compatible with Netscape cookies
+gogogo.com	TRUE	/	FALSE	1999999999	ci_session_go_ph	55t4u7fk9agkah8cqu1dl5g0nt5gt8ti
+gogogo.com	TRUE	/	FALSE	1999999999	SameSite	Lax
+
