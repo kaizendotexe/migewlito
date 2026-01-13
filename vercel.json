@@ -1,7 +1,7 @@
 {
   "functions": {
-    "gogogo.com/en-ph/api/*.php": {
-      "runtime": "vercel-php@0.7.0"
+    "gogogo.com/en-ph/api/**/*.php": {
+      "runtime": "vercel-php@0.6.0"
     }
   },
   "routes": [
