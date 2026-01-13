@@ -1,6 +1,6 @@
 {
   "functions": {
-    "gogogo.com/en-ph/api/**/*.php": {
+    "gogogo.com/en-ph/api/*.php": {
       "runtime": "vercel-php@0.6.0"
     }
   },
