@@ -1,0 +1,15 @@
+# Enable URL Rewriting
+RewriteEngine On
+
+# Prevent Directory Listing (Fixes 403 error when no index file is found)
+Options -Indexes
+
+# Allow access to index.html as the default file
+DirectoryIndex index.html index.php
+
+# Redirect API requests to the api folder
+RewriteRule ^api/(.*)$ api/$1 [L,QSA]
+
+# Optional: Force HTTPS (Good practice for InfinityFree)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
