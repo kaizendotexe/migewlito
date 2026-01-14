@@ -2,6 +2,6 @@
   "name": "migewlito",
   "version": "1.0.0",
   "dependencies": {
-    "vercel-php": "0.6.0"
+    "vercel-php": "0.7.0"
   }
 }
