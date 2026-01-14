@@ -1,21 +1,13 @@
 {
   "functions": {
-    "gogogo.com/en-ph/api/*.php": {
+    "api/*.php": {
       "runtime": "vercel-php@0.6.0"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/gogogo.com/en-ph/api/$1"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/gogogo.com/en-ph/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/gogogo.com/en-ph/$1"
+      "source": "/api/:match*",
+      "destination": "/api/:match*"
     }
   ]
 }

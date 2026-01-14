@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin - Migewlito</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/app-style.css">
+</head>
+<body style="overflow-x:hidden;">
+<div id="wrapper">
+    <nav class="navbar navbar-expand-lg fixed-top navbar-dark nav-container">
+        <div class="container">
+            <div class="classflex">
+                <div class="d-flex">
+                    <a class="navbar-brand p-0 mr-2" href="index.html">
+                        <img src="assets/images/banner1.png" alt="Logo Migewlito" class="rounded" height="24px" width="100px">
+                    </a>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" class="navbar-toggler butmobilenav overnaybutton px-2 ml-2" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 19 14" fill="none">
+                            <path d="M1 7H17.5M1 13H17.5M1 1H17.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="collapse navbar-collapse menu-utama" id="navbarNavAltMarkup">
+                <div class="navbar-nav navbar-navmobile" style="gap:.5rem;">
+                    <a class="nav-item nav-link bang" href="index.html">Home</a>
+                    <a class="nav-item nav-link bang" href="user.html">Account</a>
+                    <a class="nav-item nav-link bang active" href="admin.html">Admin</a>
+                </div>
+                <div class="navbar-nav ml-auto d-none-mobile align-items-center" style="gap:8px;">
+                    <div id="migewlito-nav-user-slot"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width:1100px;padding-top:110px;padding-bottom:60px;">
+        <div class="card" style="background:var(--warna_2);border:1px solid rgba(255,255,255,0.08);border-radius:14px;">
+            <div class="card-body">
+                <div class="text-white font-weight-bold mb-3">Admin Panel</div>
+                <div id="admin-root" class="text-white" style="opacity:.85">Loading…</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
+<script src="assets/js/app-script.js"></script>
+<script>
+(function () {
+    "use strict";
+    var root = document.getElementById("admin-root");
+
+    var apiGet = function (url) {
+        return fetch(url, { cache: "no-store" }).then(function (r) { return r.json(); });
+    };
+    var apiPost = function (url, body) {
+        return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}), cache: "no-store" })
+            .then(function (r) { return r.json(); });
+    };
+
+    var state = {
+        user: null,
+        games: [],
+        page: "",
+        maintenance: false,
+        message: "",
+        products: {},
+        parsedProducts: []
+    };
+
+    var esc = function (s) {
+        return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");
+    };
+
+    var render = function () {
+        if (!state.user) {
+            root.innerHTML = "<div>Unauthorized. Please login.</div><div style=\"margin-top:10px\"><a class=\"btn btn-primary\" href=\"user.html\">Go to Account</a></div>";
+            return;
+        }
+        if (String(state.user.role || "") !== "admin") {
+            root.innerHTML = "<div>Forbidden. Admin only.</div><div style=\"margin-top:10px\"><a class=\"btn btn-primary\" href=\"user.html\">Go to Account</a></div>";
+            return;
+        }
+
+        var gameOptions = state.games.map(function (g) {
+            return "<option value=\"" + esc(g) + "\"" + (g === state.page ? " selected" : "") + ">" + esc(g) + "</option>";
+        }).join("");
+
+        var rows = state.parsedProducts.map(function (p) {
+            var ov = state.products[p.id] || {};
+            var price = (ov.price != null && ov.price !== "") ? ov.price : p.price;
+            var dprice = (ov.discount_price != null && ov.discount_price !== "") ? ov.discount_price : p.discount_price;
+            var off = (ov.off_text != null && ov.off_text !== "") ? ov.off_text : p.off_text;
+            var hidden = !!(ov.hidden);
+            return ""
+                + "<tr>"
+                + "<td class=\"text-white\" style=\"font-weight:700\">" + esc(p.id) + "</td>"
+                + "<td class=\"text-white\">" + esc(p.name) + (p.sub ? ("<div style=\"opacity:.7;font-size:12px\">" + esc(p.sub) + "</div>") : "") + "</td>"
+                + "<td><input class=\"form-control\" data-pid=\"" + esc(p.id) + "\" data-k=\"price\" value=\"" + esc(price) + "\"></td>"
+                + "<td><input class=\"form-control\" data-pid=\"" + esc(p.id) + "\" data-k=\"discount_price\" value=\"" + esc(dprice) + "\"></td>"
+                + "<td><input class=\"form-control\" data-pid=\"" + esc(p.id) + "\" data-k=\"off_text\" value=\"" + esc(off) + "\"></td>"
+                + "<td class=\"text-center\"><input type=\"checkbox\" data-pid=\"" + esc(p.id) + "\" data-k=\"hidden\"" + (hidden ? " checked" : "") + "></td>"
+                + "</tr>";
+        }).join("");
+
+        root.innerHTML = ""
+            + "<div class=\"row\" style=\"gap:16px\">"
+            + "<div class=\"col-12 col-lg-4\">"
+            + "<label class=\"text-white\" style=\"font-weight:700\">Game page</label>"
+            + "<select class=\"form-control\" id=\"game-select\">" + gameOptions + "</select>"
+            + "<div style=\"height:1px;background:rgba(255,255,255,0.12);margin:16px 0\"></div>"
+            + "<div class=\"d-flex align-items-center\" style=\"gap:10px\">"
+            + "<input type=\"checkbox\" id=\"maintenance-toggle\"" + (state.maintenance ? " checked" : "") + ">"
+            + "<label class=\"text-white mb-0\" for=\"maintenance-toggle\" style=\"font-weight:700\">Maintenance mode</label>"
+            + "</div>"
+            + "<div class=\"form-group mt-2\">"
+            + "<label class=\"text-white\" style=\"font-weight:700\">Maintenance message</label>"
+            + "<input class=\"form-control\" id=\"maintenance-message\" value=\"" + esc(state.message) + "\" placeholder=\"Optional message\">"
+            + "</div>"
+            + "<button class=\"btn btn-primary w-100\" type=\"button\" id=\"btn-save\">Save</button>"
+            + "<div class=\"text-white\" style=\"opacity:.7;font-size:12px;margin-top:10px\">Prices apply via overrides (no HTML edits).</div>"
+            + "</div>"
+            + "<div class=\"col-12 col-lg-8\">"
+            + "<div class=\"text-white\" style=\"font-weight:800;margin-bottom:10px\">Products</div>"
+            + "<div class=\"table-responsive\">"
+            + "<table class=\"table table-dark\" style=\"background:transparent\">"
+            + "<thead><tr>"
+            + "<th>ID</th><th>Name</th><th>Price</th><th>Discount</th><th>Badge</th><th class=\"text-center\">Hide</th>"
+            + "</tr></thead>"
+            + "<tbody>" + rows + "</tbody>"
+            + "</table>"
+            + "</div>"
+            + "</div>"
+            + "</div>";
+
+        var select = document.getElementById("game-select");
+        if (select) {
+            select.addEventListener("change", function () {
+                loadGame(select.value);
+            });
+        }
+
+        var saveBtn = document.getElementById("btn-save");
+        if (saveBtn) {
+            saveBtn.addEventListener("click", function () {
+                var maintenance = !!(document.getElementById("maintenance-toggle") && document.getElementById("maintenance-toggle").checked);
+                var message = String((document.getElementById("maintenance-message") && document.getElementById("maintenance-message").value) || "").trim();
+                var products = {};
+                var inputs = root.querySelectorAll("input[data-pid][data-k]");
+                inputs.forEach(function (el) {
+                    var pid = String(el.getAttribute("data-pid") || "");
+                    var k = String(el.getAttribute("data-k") || "");
+                    if (!pid || !k) return;
+                    if (!products[pid]) products[pid] = {};
+                    if (el.type === "checkbox") {
+                        products[pid][k] = !!el.checked;
+                        return;
+                    }
+                    products[pid][k] = String(el.value || "").trim();
+                });
+
+                apiPost("api/admin_set_game_config.php", { page: state.page, maintenance: maintenance, message: message, products: products })
+                    .then(function (res) {
+                        if (!res || !res.success) throw new Error((res && res.error) || "Save failed");
+                        return loadConfig(state.page);
+                    })
+                    .then(function () { alert("Saved"); })
+                    .catch(function (e) { alert(e.message || "Save failed"); });
+            });
+        }
+    };
+
+    var loadConfig = function (page) {
+        return apiGet("api/admin_get_game_config.php?page=" + encodeURIComponent(page)).then(function (res) {
+            if (!res || !res.success) throw new Error((res && res.error) || "Failed to load config");
+            state.page = res.page;
+            state.maintenance = !!res.maintenance;
+            state.message = String(res.message || "");
+            state.products = res.products || {};
+        });
+    };
+
+    var parseProductsFromHtml = function (htmlText) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(htmlText, "text/html");
+        var inputs = Array.prototype.slice.call(doc.querySelectorAll('input[name="product"].radio-nominale'));
+        var list = inputs.map(function (i) {
+            var id = String(i.value || "").trim();
+            var price = String(i.getAttribute("data-price") || "").trim();
+            var label = null;
+            try {
+                label = doc.querySelector('label[for="' + i.id + '"]');
+            } catch (e) {}
+            var name = "";
+            var sub = "";
+            var discount = "";
+            var off = "";
+            if (label) {
+                var n = label.querySelector(".product-name");
+                var s = label.querySelector(".product-subname");
+                var dp = label.querySelector(".discount-price");
+                var rb = label.querySelector(".ribbon span");
+                name = n ? String(n.textContent || "").trim() : "";
+                sub = s ? String(s.textContent || "").trim() : "";
+                discount = dp ? String(dp.textContent || "").trim() : "";
+                off = rb ? String(rb.textContent || "").trim() : "";
+            }
+            return { id: id, name: name, sub: sub, price: price, discount_price: discount, off_text: off };
+        }).filter(function (p) { return p.id; });
+        return list;
+    };
+
+    var loadGame = function (page) {
+        if (!page) return;
+        state.page = page;
+        root.innerHTML = "Loading…";
+        return Promise.all([
+            loadConfig(page),
+            fetch(page, { cache: "no-store" }).then(function (r) { return r.text(); })
+        ]).then(function (arr) {
+            state.parsedProducts = parseProductsFromHtml(arr[1]);
+            render();
+        }).catch(function (e) {
+            root.innerHTML = "<div>Error: " + esc(e.message || "Failed") + "</div>";
+        });
+    };
+
+    Promise.all([
+        apiGet("api/auth_me.php"),
+        apiGet("api/admin_list_games.php")
+    ]).then(function (arr) {
+        var me = arr[0] && arr[0].success ? arr[0].user : null;
+        state.user = me;
+        state.games = (arr[1] && arr[1].success && Array.isArray(arr[1].games)) ? arr[1].games : [];
+        state.page = state.games[0] || "";
+        if (!state.page) {
+            render();
+            return;
+        }
+        return loadGame(state.page);
+    }).catch(function () {
+        render();
+    });
+})();
+</script>
+</body>
+</html>
+
